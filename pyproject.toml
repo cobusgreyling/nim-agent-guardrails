@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "nim-agent-guardrails"
+version = "0.1.0"
+description = "Runtime safety layer for NVIDIA NIM-powered agents"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    {name = "Cobus Greyling"},
+]
+keywords = ["nvidia", "nim", "guardrails", "agents", "safety", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "openai>=1.0",
+]
+
+[project.optional-dependencies]
+demo = ["gradio>=4.0"]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools.packages.find]
+include = ["nim_guardrails*"]
