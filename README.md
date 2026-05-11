@@ -31,11 +31,11 @@ Composable guardrails that wrap every NIM API call — input validation, output 
   │  TOOL    │    │    OUTPUT       │
   │  GUARD   │    │    GUARDRAILS   │
   │          │    │                 │
-  │ ✓ Allow  │    │ ✓ PII filter   │
-  │   list   │    │ ✓ Format check │
+  │ ✓ Allow  │    │ ✓ PII filter    │
+  │   list   │    │ ✓ Format check  │
   │ ✓ Audit  │    │ ✓ Length limit  │
-  │ ✓ Rate   │    │ ✓ Prohibited   │
-  │   limit  │    │   phrases      │
+  │ ✓ Rate   │    │ ✓ Prohibited    │
+  │   limit  │    │   phrases       │
   └──────────┘    └─────────────────┘
        │                 │
        └────────┬────────┘
