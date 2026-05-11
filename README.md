@@ -6,6 +6,10 @@ Runtime safety layer for NVIDIA NIM-powered agents.
 
 Composable guardrails that wrap every NIM API call — input validation, output filtering, PII detection, tool-call auditing, and cost controls. One import. No infrastructure.
 
+
+![nim-agent-guardrails](2026-05-11_12-28-45.jpg)
+
+
 ```
   User Input
        │
