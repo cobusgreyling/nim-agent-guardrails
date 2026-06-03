@@ -14,6 +14,11 @@ This directory contains the official showcase landing page for **nim-agent-guard
 **Live (recommended):**
 https://cobusgreyling.github.io/nim-agent-guardrails/
 
+If you see a 404, GitHub Pages needs to be enabled (one-time setup, see below).
+
+**Instant fallback (no setup required):**
+https://htmlpreview.github.io/?https://raw.githubusercontent.com/cobusgreyling/nim-agent-guardrails/main/docs/index.html
+
 **Locally:**
 ```bash
 # From repo root
@@ -25,7 +30,25 @@ python3 -m http.server 8080 --directory .
 
 The page gracefully falls back to raw GitHub image URLs if local assets are missing.
 
-GitHub Pages is configured to serve from the `docs/` folder on `main`.
+## One-time GitHub Pages Setup (fixes 404)
+
+1. Go to your repo on GitHub: https://github.com/cobusgreyling/nim-agent-guardrails
+2. Click the **Settings** tab (top right).
+3. In the left sidebar, click **Pages**.
+4. Under "Build and deployment":
+   - **Source**: select `Deploy from a branch`
+   - **Branch**: select `main`
+   - **Folder**: select `/docs`
+5. Click **Save**.
+6. Wait 1–3 minutes for the site to build (you'll see a green check or "Your site is published at..." message).
+7. Visit https://cobusgreyling.github.io/nim-agent-guardrails/
+
+**Why this works**:
+- GitHub serves the contents of the `docs/` folder at the root of the Pages site.
+- `docs/index.html` becomes the homepage.
+- The empty `.nojekyll` file (present in this folder) prevents Jekyll from processing the static HTML.
+
+After the first successful deploy, future commits to `docs/index.html` will automatically update the live site (usually within a minute).
 
 ## Notes
 

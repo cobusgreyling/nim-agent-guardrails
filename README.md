@@ -13,6 +13,9 @@ Composable guardrails that wrap every NIM API call — input validation, output 
 
 **🌐 [View the interactive showcase landing page](https://cobusgreyling.github.io/nim-agent-guardrails/)** (no install required)
 
+> **Seeing a 404?** GitHub Pages needs a one-time setup: Repo → Settings → Pages → Source: `main` + `/docs` folder.  
+> Instant fallback: [htmlpreview link](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cobusgreyling/nim-agent-guardrails/main/docs/index.html)
+
 
 ![nim-agent-guardrails](2026-05-11_12-28-45.jpg)
 
