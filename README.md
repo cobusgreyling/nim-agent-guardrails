@@ -2,9 +2,16 @@
 
 ![nim-agent-guardrails](header.png)
 
-Runtime safety layer for NVIDIA NIM-powered agents.
+> Runtime safety layer for NVIDIA NIM-powered agents.
 
-Composable guardrails that wrap every NIM API call — input validation, output filtering, PII detection, tool-call auditing, and cost controls. One import. No infrastructure.
+Composable guardrails that wrap every NIM API call — input validation, output filtering, PII detection, tool-call auditing, and cost controls. **One import. No infrastructure.**
+
+[![CI](https://github.com/cobusgreyling/nim-agent-guardrails/actions/workflows/ci.yml/badge.svg)](https://github.com/cobusgreyling/nim-agent-guardrails/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900.svg)](https://build.nvidia.com)
+
+**🌐 [View the interactive showcase landing page](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cobusgreyling/nim-agent-guardrails/main/docs/index.html)** (no install required)
 
 
 ![nim-agent-guardrails](2026-05-11_12-28-45.jpg)
@@ -63,19 +70,31 @@ This library gives you:
 
 ## Install
 
+### Recommended (no clone needed)
+
 ```bash
-pip install openai
-git clone https://github.com/cobusgreyling/nim-agent-guardrails.git
-cd nim-agent-guardrails
+pip install "git+https://github.com/cobusgreyling/nim-agent-guardrails.git[nim]"
 ```
 
-Set your NIM API key:
+For the Gradio demo examples:
+
+```bash
+pip install "git+https://github.com/cobusgreyling/nim-agent-guardrails.git[nim,demo]"
+```
+
+### From source
+
+```bash
+git clone https://github.com/cobusgreyling/nim-agent-guardrails.git
+cd nim-agent-guardrails
+pip install -e ".[nim,demo,dev]"
+```
+
+Set your NIM API key (get a free one at [build.nvidia.com](https://build.nvidia.com)):
 
 ```bash
 export NVIDIA_API_KEY=nvapi-...
 ```
-
-Get a free key at [build.nvidia.com](https://build.nvidia.com).
 
 ## Quick Start
 
@@ -166,7 +185,7 @@ output_guardrails.add(LanguageGuardrail())
 Full agent with flight search, hotel search, and weather tools — guardrail enforcement visible in real time:
 
 ```bash
-pip install gradio
+pip install "git+https://github.com/cobusgreyling/nim-agent-guardrails.git[nim,demo]"
 python examples/travel_agent_demo.py --gradio
 ```
 
@@ -238,12 +257,18 @@ nim-agent-guardrails/
 │   ├── guardrails.py        # Guardrail definitions + chain
 │   ├── client.py            # NIM API client (OpenAI-compatible)
 │   └── agent.py             # GuardedAgent with full lifecycle
+├── docs/
+│   ├── index.html           # ✨ Interactive showcase landing page (self-contained)
+│   └── README.md            # How to view / host the landing page
 ├── examples/
 │   ├── travel_agent_demo.py       # Full agent with Gradio UI
 │   └── guardrails_only_demo.py    # Test guardrails without API key
 ├── tests/
 │   └── test_guardrails.py   # 37 unit tests
+├── .github/workflows/
+│   └── ci.yml               # GitHub Actions (pytest on 3.10-3.12)
 ├── pyproject.toml
+├── CHANGELOG.md
 ├── requirements.txt
 └── LICENSE                  # MIT
 ```
@@ -251,9 +276,21 @@ nim-agent-guardrails/
 ## Requirements
 
 - Python 3.10+
-- `openai` (for NIM's OpenAI-compatible API)
-- `gradio` (optional, for the demo UI)
-- NVIDIA NIM API key ([build.nvidia.com](https://build.nvidia.com))
+- `openai` (optional, only for `NimClient` + `GuardedAgent`; install with `[nim]` extra)
+- `gradio` (optional, for the Gradio demo UI)
+- NVIDIA NIM API key (free at [build.nvidia.com](https://build.nvidia.com)) — only needed when using the full agent against NIM
+
+Core guardrails (`InputLengthGuardrail`, `PiiDetectionGuardrail`, etc.) have **zero runtime dependencies**.
+
+## Contributing
+
+We welcome contributions! Ideas for new guardrails, better PII detection, async support, more examples, and docs are all great.
+
+- Fork, create a feature branch, add tests
+- Run `pytest` before PR
+- Open an issue to discuss larger changes
+
+See the [GitHub repo](https://github.com/cobusgreyling/nim-agent-guardrails) for issues and discussions.
 
 ## License
 

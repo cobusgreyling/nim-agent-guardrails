@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nim-agent-guardrails • Runtime Guardrails for NVIDIA NIM Agents</title>
+  <meta name="description" content="Composable guardrails for NVIDIA NIM agents. Input validation, PII, cost controls, tool auditing. Zero infrastructure. One import.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+    
+    :root {
+      --nvidia-green: #76b900;
+    }
+    
+    body {
+      font-family: 'Inter', system_ui, sans-serif;
+    }
+    
+    .font-display {
+      font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+      font-weight: 600;
+    }
+
+    .nvidia-green {
+      color: #76b900;
+    }
+
+    .bg-nvidia {
+      background-color: #76b900;
+    }
+
+    .section-header {
+      font-size: 2.25rem;
+      line-height: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -.025em;
+    }
+
+    .glass {
+      background: rgba(255,255,255, 0.03);
+      border: 1px solid rgba(255,255,255, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .guard-card {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .guard-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      border-color: #76b90033;
+    }
+
+    .metric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .nav-active {
+      color: #76b900;
+      border-bottom: 2px solid #76b900;
+    }
+
+    .code-block {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .result-pass {
+      background-color: #052e16;
+      border-color: #166534;
+      color: #4ade80;
+    }
+    
+    .result-fail {
+      background-color: #450a0a;
+      border-color: #991b1b;
+      color: #f87171;
+    }
+
+    .flow-step {
+      transition: all 0.3s ease;
+    }
+
+    .demo-log {
+      font-family: ui-monospace, monospace;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+
+    .stat-number {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mini-badge {
+      font-size: 0.65rem;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+      padding-top: 0.05rem;
+      padding-bottom: 0.05rem;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+  <!-- NAVBAR -->
+  <nav class="border-b border-white/10 bg-zinc-950/80 backdrop-blur-lg sticky top-0 z-50">
+    <div class="max-w-screen-xl mx-auto px-6">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-x-3">
+          <div class="flex items-center gap-x-2">
+            <div class="w-9 h-9 rounded-xl bg-[#76b900] flex items-center justify-center">
+              <i class="fa-solid fa-shield-halved text-zinc-950 text-2xl"></i>
+            </div>
+            <div>
+              <span class="font-display text-2xl font-semibold tracking-tighter">nim</span>
+              <span class="font-display text-2xl font-semibold tracking-tighter text-[#76b900]">-guardrails</span>
+            </div>
+          </div>
+          <div class="hidden md:flex items-center text-xs px-2 py-0.5 rounded-full bg-white/5 text-zinc-400 border border-white/10">v0.2.0</div>
+        </div>
+
+        <div class="hidden md:flex items-center gap-x-8 text-sm">
+          <a href="#demo" class="hover:text-white transition-colors">Interactive Demo</a>
+          <a href="#guardrails" class="hover:text-white transition-colors">Guardrails</a>
+          <a href="#how" class="hover:text-white transition-colors">How it Works</a>
+          <a href="#code" class="hover:text-white transition-colors">Examples</a>
+        </div>
+
+        <div class="flex items-center gap-x-3">
+          <a href="https://github.com/cobusgreyling/nim-agent-guardrails" target="_blank"
+             class="flex items-center gap-x-2 text-sm px-4 py-2 rounded-2xl border border-white/15 hover:bg-white/5 transition-all active:scale-[0.985]">
+            <i class="fa-brands fa-github"></i>
+            <span class="hidden sm:inline">GitHub</span>
+          </a>
+          <a href="https://github.com/cobusgreyling/nim-agent-guardrails#readme" target="_blank"
+             class="hidden sm:flex items-center gap-x-2 bg-white text-zinc-950 px-4 py-2 text-sm font-semibold rounded-2xl hover:bg-zinc-200 transition-all active:scale-[0.985]">
+            <span>Readme</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="max-w-screen-xl mx-auto px-6 pt-16 pb-12">
+    <div class="grid md:grid-cols-12 gap-10 items-center">
+      <div class="md:col-span-7">
+        <div class="inline-flex items-center gap-x-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs mb-6">
+          <div class="w-2 h-2 bg-[#76b900] rounded-full animate-pulse"></div>
+          <span class="text-zinc-400">For NVIDIA NIM + Nemotron agents</span>
+        </div>
+
+        <h1 class="font-display text-6xl md:text-7xl tracking-tighter font-semibold leading-none">
+          Guardrails that<br>actually run<br>
+          <span class="text-[#76b900]">in-process.</span>
+        </h1>
+        
+        <p class="mt-6 max-w-lg text-xl text-zinc-400">
+          Composable runtime safety for every NIM API call. 
+          Input filtering, PII scrubbing, cost limits, tool auditing. 
+          Zero external services. One import.
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href="#demo" 
+             class="inline-flex items-center justify-center gap-x-2 bg-[#76b900] hover:bg-[#8ac41f] transition-all text-zinc-950 font-semibold px-7 h-12 rounded-3xl text-base active:scale-[0.985]">
+            <i class="fa-solid fa-play mr-1"></i>
+            <span>Try the live demo</span>
+          </a>
+          
+          <a href="https://github.com/cobusgreyling/nim-agent-guardrails" target="_blank"
+             class="inline-flex items-center justify-center gap-x-2 border border-white/20 hover:bg-white/5 transition-all px-6 h-12 rounded-3xl text-base font-medium active:scale-[0.985]">
+            <i class="fa-brands fa-github"></i>
+            <span>Star on GitHub</span>
+          </a>
+        </div>
+
+        <div class="mt-6 flex items-center gap-x-6 text-sm">
+          <div class="flex items-center -space-x-1">
+            <div class="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 ring-1 ring-white/10"></div>
+            <div class="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 ring-1 ring-white/10"></div>
+            <div class="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-700 ring-1 ring-white/10"></div>
+          </div>
+          <div class="text-zinc-500 text-sm">Used in production agent stacks • MIT licensed</div>
+        </div>
+      </div>
+
+      <!-- Hero visual -->
+      <div class="md:col-span-5 relative">
+        <div class="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+          <img src="../header.png" 
+               onerror="this.src='https://raw.githubusercontent.com/cobusgreyling/nim-agent-guardrails/main/header.png'"
+               alt="nim-agent-guardrails header graphic"
+               class="w-full h-auto">
+          <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/40"></div>
+          <div class="absolute bottom-4 right-4 px-3 py-1 text-xs bg-black/70 backdrop-blur rounded-2xl border border-white/10 flex items-center gap-x-1.5">
+            <i class="fa-solid fa-check text-[#76b900]"></i>
+            <span class="text-xs font-medium">Zero infra</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS / TRUST -->
+  <div class="border-y border-white/10 bg-zinc-900/50">
+    <div class="max-w-screen-xl mx-auto px-6 py-5">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-y-4 text-center">
+        <div>
+          <div class="text-3xl font-semibold tracking-tighter stat-number">6</div>
+          <div class="text-xs uppercase tracking-[1px] text-zinc-500 mt-0.5">Built-in guardrails</div>
+        </div>
+        <div>
+          <div class="text-3xl font-semibold tracking-tighter stat-number">0</div>
+          <div class="text-xs uppercase tracking-[1px] text-zinc-500 mt-0.5">External services</div>
+        </div>
+        <div>
+          <div class="text-3xl font-semibold tracking-tighter stat-number">37</div>
+          <div class="text-xs uppercase tracking-[1px] text-zinc-500 mt-0.5">Unit tests passing</div>
+        </div>
+        <div>
+          <div class="text-3xl font-semibold tracking-tighter stat-number">&lt;1ms</div>
+          <div class="text-xs uppercase tracking-[1px] text-zinc-500 mt-0.5">Per guardrail overhead</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE DEMO -->
+  <div id="demo" class="max-w-screen-xl mx-auto px-6 pt-16 pb-8 scroll-mt-10">
+    <div class="flex items-end justify-between mb-6">
+      <div>
+        <div class="uppercase text-[#76b900] text-xs tracking-[2px] font-semibold">Live in the browser</div>
+        <h2 class="section-header tracking-tighter">Interactive Guardrails Demo</h2>
+        <p class="text-zinc-400 mt-1">Test the exact same guardrail logic that runs in Python — no API key, no backend.</p>
+      </div>
+      <a href="https://github.com/cobusgreyling/nim-agent-guardrails/blob/main/examples/guardrails_only_demo.py" target="_blank"
+         class="hidden md:flex items-center text-xs gap-1.5 text-zinc-400 hover:text-white">
+        <span>View Python source</span> <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+      </a>
+    </div>
+
+    <div class="glass rounded-3xl border border-white/10 p-6 md:p-7">
+      <!-- Demo controls -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Input panel -->
+        <div class="lg:col-span-5 space-y-4">
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold tracking-wider text-zinc-400">USER INPUT</label>
+              <button onclick="loadPreset('input-long')" 
+                      class="text-[10px] px-2 py-0.5 rounded-lg border border-white/10 hover:bg-white/5 text-zinc-400">Long input</button>
+            </div>
+            <textarea id="demo-input" rows="3" 
+                      class="w-full bg-zinc-900 border border-white/10 focus:border-[#76b90033] rounded-2xl p-3 text-sm font-light placeholder:text-zinc-500 focus:outline-none resize-y"
+                      placeholder="Plan a trip to Tokyo...">Plan a trip to Paris for next weekend</textarea>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-semibold tracking-wider text-zinc-400">MODEL OUTPUT (for output guards)</label>
+              <button onclick="loadPreset('output-pii')" 
+                      class="text-[10px] px-2 py-0.5 rounded-lg border border-white/10 hover:bg-white/5 text-zinc-400">With PII</button>
+            </div>
+            <textarea id="demo-output" rows="2" 
+                      class="w-full bg-zinc-900 border border-white/10 focus:border-[#76b90033] rounded-2xl p-3 text-sm font-light placeholder:text-zinc-500 focus:outline-none"
+                      placeholder="Output from NIM...">Here are your flight options. Contact support@airline.com if needed.</textarea>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold tracking-wider text-zinc-400 mb-1.5 block">TOOL CALLS (JSON array)</label>
+            <input id="demo-tools" type="text" value='[{"function":{"name":"search_flights","arguments":"{\"origin\":\"NYC\",\"destination\":\"PAR\"}"}}]'
+                   class="w-full bg-zinc-900 border border-white/10 focus:border-[#76b90033] rounded-2xl p-3 text-sm font-mono placeholder:text-zinc-500 focus:outline-none">
+            <div class="flex gap-2 mt-1.5">
+              <button onclick="loadPreset('tool-ok')" class="text-[10px] flex-1 px-2 py-1 rounded-xl border border-white/10 hover:bg-emerald-950/40 text-emerald-400 text-left pl-3">Allowed tool</button>
+              <button onclick="loadPreset('tool-blocked')" class="text-[10px] flex-1 px-2 py-1 rounded-xl border border-white/10 hover:bg-red-950/40 text-red-400 text-left pl-3">Blocked tool</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Run + Results -->
+        <div class="lg:col-span-7">
+          <div class="flex items-center gap-3 mb-3">
+            <button onclick="runDemoGuardrails()" 
+                    class="flex-1 md:flex-none items-center justify-center gap-x-2 bg-[#76b900] text-zinc-950 font-semibold px-6 h-11 rounded-2xl flex active:scale-[0.985] transition-all">
+              <i class="fa-solid fa-shield-halved mr-2"></i>
+              <span>RUN ALL GUARDRAILS</span>
+            </button>
+            <button onclick="resetDemo()" 
+                    class="px-5 h-11 text-sm border border-white/15 hover:bg-white/5 rounded-2xl transition-all">Reset</button>
+          </div>
+
+          <div id="demo-results" class="space-y-2 min-h-[138px]">
+            <div class="text-xs text-zinc-500 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+              Results will appear here after running the demo
+            </div>
+          </div>
+
+          <div id="demo-summary" class="hidden mt-3 text-xs flex items-center gap-x-3 text-zinc-400">
+            <div class="px-3 py-1 bg-white/5 rounded-2xl border border-white/10">
+              <span id="demo-pass-count"></span> passed
+            </div>
+            <div class="text-[10px]">Total latency: <span id="demo-total-latency" class="font-medium text-white"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick attack presets -->
+      <div class="mt-5 pt-4 border-t border-white/10">
+        <div class="text-[10px] uppercase tracking-widest text-zinc-500 mb-2">Quick failing cases</div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="loadPreset('input-long');runDemoGuardrails()" class="text-xs px-3 py-1 rounded-2xl border border-white/10 hover:border-red-900 hover:text-red-400 transition-colors">Input too long</button>
+          <button onclick="loadPreset('topic-block');runDemoGuardrails()" class="text-xs px-3 py-1 rounded-2xl border border-white/10 hover:border-red-900 hover:text-red-400 transition-colors">Blocked topic (exploit)</button>
+          <button onclick="loadPreset('output-pii');runDemoGuardrails()" class="text-xs px-3 py-1 rounded-2xl border border-white/10 hover:border-red-900 hover:text-red-400 transition-colors">PII in output (email)</button>
+          <button onclick="loadPreset('output-prohibited');runDemoGuardrails()" class="text-xs px-3 py-1 rounded-2xl border border-white/10 hover:border-red-900 hover:text-red-400 transition-colors">Prohibited phrase</button>
+          <button onclick="loadPreset('tool-blocked');runDemoGuardrails()" class="text-xs px-3 py-1 rounded-2xl border border-white/10 hover:border-red-900 hover:text-red-400 transition-colors">Tool not allowed</button>
+          <button onclick="loadPreset('cost-exhausted');runDemoGuardrails()" class="text-xs px-3 py-1 rounded-2xl border border-white/10 hover:border-red-900 hover:text-red-400 transition-colors">Cost budget exhausted</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GUARDRAILS -->
+  <div id="guardrails" class="max-w-screen-xl mx-auto px-6 pt-10 pb-16 scroll-mt-10">
+    <div class="mb-6">
+      <div class="uppercase text-[#76b900] text-xs tracking-[2px] font-semibold">6 built-in primitives</div>
+      <h2 class="section-header tracking-tighter">Composable by default</h2>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Guardrail cards -->
+      <div class="guard-card p-5 rounded-3xl border border-white/10 bg-zinc-900/60 group" onclick="loadGuardIntoDemo('input_length')">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <span class="font-semibold">InputLengthGuardrail</span>
+              <span class="mini-badge bg-emerald-950 text-emerald-400 border border-emerald-900">INPUT</span>
+            </div>
+            <div class="text-sm text-zinc-400 mt-1">Rejects inputs exceeding char or estimated token limits</div>
+          </div>
+          <i class="fa-solid fa-ruler-horizontal text-xl text-zinc-600 group-hover:text-[#76b900] transition-colors"></i>
+        </div>
+        <div class="mt-3 text-[10px] text-emerald-400/70">Default: 4000 chars / 1500 tokens</div>
+      </div>
+
+      <div class="guard-card p-5 rounded-3xl border border-white/10 bg-zinc-900/60 group" onclick="loadGuardIntoDemo('blocked_topic')">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <span class="font-semibold">BlockedTopicGuardrail</span>
+              <span class="mini-badge bg-emerald-950 text-emerald-400 border border-emerald-900">IN / OUT</span>
+            </div>
+            <div class="text-sm text-zinc-400 mt-1">Blocks messages matching configurable regex patterns (weapons, illegal, etc.)</div>
+          </div>
+          <i class="fa-solid fa-ban text-xl text-zinc-600 group-hover:text-[#76b900] transition-colors"></i>
+        </div>
+        <div class="mt-3 text-[10px] text-emerald-400/70">Case-insensitive • Custom patterns supported</div>
+      </div>
+
+      <div class="guard-card p-5 rounded-3xl border border-white/10 bg-zinc-900/60 group" onclick="loadGuardIntoDemo('pii')">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <span class="font-semibold">PiiDetectionGuardrail</span>
+              <span class="mini-badge bg-amber-950 text-amber-400 border border-amber-900">OUTPUT (opt-in input)</span>
+            </div>
+            <div class="text-sm text-zinc-400 mt-1">Detects emails, phones, SSNs, credit cards with regex</div>
+          </div>
+          <i class="fa-solid fa-user-secret text-xl text-zinc-600 group-hover:text-[#76b900] transition-colors"></i>
+        </div>
+        <div class="mt-3 text-[10px] text-emerald-400/70">Selective PII types • Works on input or output</div>
+      </div>
+
+      <div class="guard-card p-5 rounded-3xl border border-white/10 bg-zinc-900/60 group" onclick="loadGuardIntoDemo('output_format')">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <span class="font-semibold">OutputFormatGuardrail</span>
+              <span class="mini-badge bg-amber-950 text-amber-400 border border-amber-900">OUTPUT</span>
+            </div>
+            <div class="text-sm text-zinc-400 mt-1">Enforces max length, required sections, and prohibited phrases</div>
+          </div>
+          <i class="fa-solid fa-list-check text-xl text-zinc-600 group-hover:text-[#76b900] transition-colors"></i>
+        </div>
+        <div class="mt-3 text-[10px] text-emerald-400/70">Great for structured responses</div>
+      </div>
+
+      <div class="guard-card p-5 rounded-3xl border border-white/10 bg-zinc-900/60 group" onclick="loadGuardIntoDemo('cost_limit')">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <span class="font-semibold">CostLimitGuardrail</span>
+              <span class="mini-badge bg-sky-950 text-sky-400 border border-sky-900">INPUT</span>
+            </div>
+            <div class="text-sm text-zinc-400 mt-1">Cumulative + per-request token budget enforcement</div>
+          </div>
+          <i class="fa-solid fa-wallet text-xl text-zinc-600 group-hover:text-[#76b900] transition-colors"></i>
+        </div>
+        <div class="mt-3 text-[10px] text-emerald-400/70">Stateful across turns • Auto records usage</div>
+      </div>
+
+      <div class="guard-card p-5 rounded-3xl border border-white/10 bg-zinc-900/60 group" onclick="loadGuardIntoDemo('tool_audit')">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-x-2">
+              <span class="font-semibold">ToolCallAuditGuardrail</span>
+              <span class="mini-badge bg-violet-950 text-violet-400 border border-violet-900">TOOL</span>
+            </div>
+            <div class="text-sm text-zinc-400 mt-1">Allow/block lists, max calls per turn, full audit trail</div>
+          </div>
+          <i class="fa-solid fa-toolbox text-xl text-zinc-600 group-hover:text-[#76b900] transition-colors"></i>
+        </div>
+        <div class="mt-3 text-[10px] text-emerald-400/70">Audit log always populated</div>
+      </div>
+    </div>
+
+    <div class="mt-4 text-center text-xs text-zinc-500">
+      Click any card above to load a matching scenario into the live demo →
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div id="how" class="bg-zinc-900/60 border-y border-white/10 py-12 scroll-mt-10">
+    <div class="max-w-screen-xl mx-auto px-6">
+      <div class="max-w-2xl">
+        <div class="uppercase text-[#76b900] text-xs tracking-[2px] font-semibold mb-1">Simple &amp; composable</div>
+        <h2 class="section-header tracking-tighter">Wrap every turn in safety</h2>
+        <p class="mt-2 text-zinc-400">Guardrails run before the NIM call, around tool execution, and on the final output. Short-circuit on the first failure.</p>
+      </div>
+
+      <!-- Flow -->
+      <div class="mt-9 grid md:grid-cols-3 gap-3 text-sm">
+        <div class="flow-step rounded-3xl border border-white/10 p-5 bg-zinc-950">
+          <div class="flex items-center gap-2 text-[#76b900]">
+            <i class="fa-solid fa-arrow-down w-4"></i>
+            <span class="font-semibold tracking-tight">1. INPUT GUARDRAILS</span>
+          </div>
+          <div class="mt-3 space-y-1.5 text-xs text-zinc-400">
+            <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 w-3"></i> Length + token estimate</div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 w-3"></i> Blocked topics / jailbreaks</div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 w-3"></i> Budget check (pre-flight)</div>
+          </div>
+        </div>
+
+        <div class="flow-step rounded-3xl border border-white/10 p-5 bg-zinc-950">
+          <div class="flex items-center gap-2 text-[#76b900]">
+            <i class="fa-solid fa-robot w-4"></i>
+            <span class="font-semibold tracking-tight">2. NVIDIA NIM CALL</span>
+          </div>
+          <div class="mt-3 text-xs text-zinc-400 leading-snug">
+            Uses the official OpenAI-compatible endpoint at <span class="font-mono text-emerald-400/80">integrate.api.nvidia.com/v1</span>.<br>
+            Full tool calling support. Automatic usage tracking.
+          </div>
+          <div class="mt-4 text-[10px] px-3 py-1 bg-white/5 inline-block rounded-2xl">Nemotron • Llama 3.1 • Any NIM model</div>
+        </div>
+
+        <div class="flow-step rounded-3xl border border-white/10 p-5 bg-zinc-950">
+          <div class="flex items-center gap-2 text-[#76b900]">
+            <i class="fa-solid fa-arrow-up w-4"></i>
+            <span class="font-semibold tracking-tight">3. OUTPUT + TOOL GUARDS</span>
+          </div>
+          <div class="mt-3 space-y-1.5 text-xs text-zinc-400">
+            <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 w-3"></i> Tool allow/block + rate limits</div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 w-3"></i> PII redaction / blocking</div>
+            <div class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400 w-3"></i> Format + prohibited phrases</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 text-xs text-center text-zinc-500">
+        Every turn produces a structured <code class="bg-white/5 px-1.5 py-px rounded">TurnRecord</code> + full audit log (JSON).
+      </div>
+    </div>
+  </div>
+
+  <!-- CODE EXAMPLES -->
+  <div id="code" class="max-w-screen-xl mx-auto px-6 pt-16 pb-12 scroll-mt-10">
+    <div class="flex items-end justify-between mb-5">
+      <div>
+        <div class="uppercase text-[#76b900] text-xs tracking-[2px]">Drop-in usage</div>
+        <h2 class="section-header tracking-tighter">Code that feels native</h2>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="mb-3 flex border-b border-white/10 text-sm">
+      <button onclick="switchCodeTab(0)" class="code-tab px-5 py-2 border-b-2 border-[#76b900] text-white font-medium" id="tab-0">Quickstart</button>
+      <button onclick="switchCodeTab(1)" class="code-tab px-5 py-2 text-zinc-400 hover:text-white" id="tab-1">Custom Guardrail</button>
+      <button onclick="switchCodeTab(2)" class="code-tab px-5 py-2 text-zinc-400 hover:text-white" id="tab-2">Audit Log</button>
+    </div>
+
+    <div id="code-panel-0" class="code-panel">
+      <pre class="code-block bg-zinc-900 border border-white/10 rounded-3xl p-5 text-sm overflow-auto"><code>from nim_guardrails import (
+    NimClient, GuardedAgent, AgentConfig,
+    GuardrailChain, InputLengthGuardrail,
+    BlockedTopicGuardrail, PiiDetectionGuardrail, CostLimitGuardrail
+)
+
+client = NimClient()   # reads NVIDIA_API_KEY
+
+input_guards = GuardrailChain([
+    InputLengthGuardrail(max_chars=2000),
+    BlockedTopicGuardrail(),
+    CostLimitGuardrail(max_total_tokens=50_000),
+])
+
+agent = GuardedAgent(
+    client=client,
+    config=AgentConfig(system_prompt="You are a helpful travel assistant."),
+    input_guardrails=input_guards,
+    output_guardrails=GuardrailChain([PiiDetectionGuardrail()]),
+)
+
+response, record = agent.run("Plan a trip to Tokyo")
+print(response)
+print("Blocked?", record.blocked)
+print("Latency:", record.latency_ms)</code></pre>
+    </div>
+
+    <div id="code-panel-1" class="code-panel hidden">
+      <pre class="code-block bg-zinc-900 border border-white/10 rounded-3xl p-5 text-sm overflow-auto"><code>from nim_guardrails import Guardrail, GuardrailResult
+
+class LanguageGuardrail(Guardrail):
+    name = "language_check"
+
+    def check(self, *, output_text=None, **_):
+        if output_text and "sorry" in output_text.lower():
+            return self._fail("Model apologised — likely refusing")
+        return self._ok("No refusal language")
+
+# Add to any chain
+output_guardrails.add(LanguageGuardrail())</code></pre>
+    </div>
+
+    <div id="code-panel-2" class="code-panel hidden">
+      <pre class="code-block bg-zinc-900 border border-white/10 rounded-3xl p-5 text-sm overflow-auto"><code># Full structured audit after any run
+import json
+print(json.dumps(agent.get_audit_log(), indent=2))
+
+# Example record:
+# {
+#   "turn": 1, "blocked": false, "latency_ms": 1240,
+#   "usage": {"total_tokens": 231},
+#   "guardrails": {
+#     "input":  [{"name": "input_length", "passed": true, ...}],
+#     "output": [{"name": "pii_detection", "passed": true, ...}],
+#     "tool":   []
+#   }
+# }</code></pre>
+    </div>
+
+    <div class="text-xs text-zinc-500 mt-2">All examples run with <span class="font-medium">pip install "git+https://...[nim]"</span></div>
+  </div>
+
+  <!-- FINAL CTA -->
+  <div class="max-w-screen-xl mx-auto px-6 pb-16">
+    <div class="rounded-3xl border border-white/10 bg-zinc-900 px-8 py-9 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <div class="font-semibold text-xl tracking-tight">Ready to make your NIM agents safe by default?</div>
+        <div class="text-sm text-zinc-400 mt-0.5">Install in seconds. Works with any OpenAI-compatible NIM endpoint.</div>
+      </div>
+      <div class="flex gap-3 w-full md:w-auto">
+        <button onclick="copyInstallCmd()" 
+                class="flex-1 md:flex-none whitespace-nowrap items-center justify-center gap-x-2 border border-white/20 hover:bg-white/5 px-6 h-11 rounded-3xl font-medium flex text-sm">
+          <i class="fa-regular fa-copy mr-2"></i>
+          <span>Copy pip install</span>
+        </button>
+        <a href="https://github.com/cobusgreyling/nim-agent-guardrails" target="_blank"
+           class="flex-1 md:flex-none whitespace-nowrap items-center justify-center gap-x-2 bg-[#76b900] text-zinc-950 font-semibold px-6 h-11 rounded-3xl text-sm flex active:scale-[0.985]">
+          <span>View on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <footer class="border-t border-white/10 py-9 text-center text-xs text-zinc-500">
+    <div class="max-w-screen-xl mx-auto px-6">
+      MIT License • Made for the NVIDIA ecosystem • 
+      <a href="https://github.com/cobusgreyling/nim-agent-guardrails" class="hover:text-white underline">github.com/cobusgreyling/nim-agent-guardrails</a>
+      <div class="mt-1">This landing page is fully static and self-contained. Open <code>docs/index.html</code> locally for offline use.</div>
+    </div>
+  </footer>
+
+  <script>
+    // Tailwind script
+    function initTailwind() {
+      document.documentElement.style.setProperty('--accent', '#76b900');
+      
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif']
+            }
+          }
+        }
+      };
+    }
+
+    // Code tabs
+    let currentTab = 0;
+    function switchCodeTab(tab) {
+      document.querySelectorAll('.code-panel').forEach((el, i) => {
+        el.classList.toggle('hidden', i !== tab);
+      });
+      document.querySelectorAll('.code-tab').forEach((el, i) => {
+        if (i === tab) {
+          el.classList.add('border-b-2', 'border-[#76b900]', 'text-white');
+          el.classList.remove('text-zinc-400');
+        } else {
+          el.classList.remove('border-b-2', 'border-[#76b900]', 'text-white');
+          el.classList.add('text-zinc-400');
+        }
+      });
+      currentTab = tab;
+    }
+
+    // Copy install command
+    function copyInstallCmd() {
+      const cmd = 'pip install "git+https://github.com/cobusgreyling/nim-agent-guardrails.git[nim]"';
+      navigator.clipboard.writeText(cmd).then(() => {
+        const origText = event.currentTarget ? event.currentTarget.innerHTML : '';
+        // quick visual feedback
+        const btns = document.querySelectorAll('button');
+        const target = Array.from(btns).find(b => b.textContent.includes('Copy pip') || b.innerText.includes('Copy'));
+        if (target) {
+          const old = target.innerHTML;
+          target.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Copied!';
+          setTimeout(() => { if (target) target.innerHTML = old; }, 1600);
+        } else {
+          // fallback toast
+          const toast = document.createElement('div');
+          toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-zinc-800 border border-white/10 text-xs px-4 py-2 rounded-2xl shadow-xl';
+          toast.textContent = 'Install command copied to clipboard';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 1800);
+        }
+      }).catch(() => {
+        prompt('Copy this command:', cmd);
+      });
+    }
+
+    // === JS PORT OF THE GUARDRAILS (exact logic parity with Python) ===
+    function makeResult(passed, name, message, meta = {}) {
+      return { passed, guardrail_name: name, message, metadata: meta, latency_ms: 0 };
+    }
+
+    function runInputLength(inputText, maxChars = 4000, maxTokensEst = 1500) {
+      if (!inputText) return makeResult(true, "input_length", "No input to check");
+      const chars = inputText.length;
+      if (chars > maxChars) {
+        return makeResult(false, "input_length", `Input too long: ${chars} chars (max ${maxChars})`, { chars });
+      }
+      const est = Math.floor(chars / 4);
+      if (est > maxTokensEst) {
+        return makeResult(false, "input_length", `Estimated ${est} tokens exceeds limit of ${maxTokensEst}`, { estimated_tokens: est });
+      }
+      return makeResult(true, "input_length", "Input length OK", { chars, estimated_tokens: est });
+    }
+
+    function runBlockedTopic(inputText, outputText, patterns = null) {
+      const defaultPatterns = [
+        /\b(bombs?|weapons?|exploit|hack)\b/i,
+        /\b(illegal|illicit)\s+(drug|substance)/i
+      ];
+      const compiled = patterns || defaultPatterns;
+
+      for (const [text, label] of [[inputText, "input"], [outputText, "output"]]) {
+        if (!text) continue;
+        for (const re of compiled) {
+          const match = text.match(re);
+          if (match) {
+            return makeResult(false, "blocked_topic", `Blocked topic detected in ${label}: '${match[0]}'`, { location: label, matched: match[0] });
+          }
+        }
+      }
+      return makeResult(true, "blocked_topic", "No blocked topics found");
+    }
+
+    function runPiiDetection(inputText, outputText, checkOutput = true, checkInput = false) {
+      const patterns = {
+        email: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/,
+        phone: /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/,
+        ssn: /\b\d{3}-\d{2}-\d{4}\b/,
+        credit_card: /\b(?:\d{4}[-\s]?){3}\d{4}\b/
+      };
+      const found = [];
+      const checks = [];
+      if (checkInput && inputText) checks.push(["input", inputText]);
+      if (checkOutput && outputText) checks.push(["output", outputText]);
+
+      for (const [loc, text] of checks) {
+        for (const [type, re] of Object.entries(patterns)) {
+          if (re.test(text)) {
+            found.push({ type, location: loc });
+          }
+        }
+      }
+      if (found.length) {
+        const types = [...new Set(found.map(f => f.type))].join(", ");
+        return makeResult(false, "pii_detection", `PII detected: ${types}`, { pii_found: found });
+      }
+      return makeResult(true, "pii_detection", "No PII detected");
+    }
+
+    function runOutputFormat(outputText, maxLen = 5000, required = [], prohibited = []) {
+      if (!outputText) return makeResult(true, "output_format", "No output to check");
+      if (outputText.length > maxLen) {
+        return makeResult(false, "output_format", `Output too long: ${outputText.length} chars (max ${maxLen})`);
+      }
+      for (const sec of required) {
+        if (!outputText.toLowerCase().includes(sec.toLowerCase())) {
+          return makeResult(false, "output_format", `Missing required section: '${sec}'`);
+        }
+      }
+      for (const phrase of prohibited) {
+        if (outputText.toLowerCase().includes(phrase.toLowerCase())) {
+          return makeResult(false, "output_format", `Prohibited phrase found: '${phrase}'`);
+        }
+      }
+      return makeResult(true, "output_format", "Output format OK");
+    }
+
+    // Simple stateful cost for demo (resets on page or via button)
+    let demoTokensUsed = 0;
+
+    function runCostLimit(inputText, maxTotal = 10000, maxSingle = 4096) {
+      if (demoTokensUsed >= maxTotal) {
+        return makeResult(false, "cost_limit", `Token budget exhausted: ${demoTokensUsed}/${maxTotal}`, { tokens_used: demoTokensUsed });
+      }
+      if (inputText) {
+        const est = Math.floor(inputText.length / 4);
+        if (est > maxSingle) {
+          return makeResult(false, "cost_limit", `Single request too large: ~${est} tokens (max ${maxSingle})`, { estimated_tokens: est });
+        }
+      }
+      return makeResult(true, "cost_limit", `Budget OK: ${demoTokensUsed}/${maxTotal} tokens used`, { tokens_used: demoTokensUsed, budget: maxTotal });
+    }
+
+    function runToolAudit(toolCalls, allowed = null, blocked = [], maxPerTurn = 5) {
+      if (!toolCalls || toolCalls.length === 0) {
+        return makeResult(true, "tool_call_audit", "No tool calls to audit");
+      }
+      if (toolCalls.length > maxPerTurn) {
+        return makeResult(false, "tool_call_audit", `Too many tool calls: ${toolCalls.length} (max ${maxPerTurn})`);
+      }
+      for (const tc of toolCalls) {
+        const name = (tc.function && tc.function.name) || tc.name || "unknown";
+        if (blocked.includes(name)) {
+          return makeResult(false, "tool_call_audit", `Blocked tool called: ${name}`);
+        }
+        if (allowed && !allowed.includes(name)) {
+          return makeResult(false, "tool_call_audit", `Tool not in allow-list: ${name}`);
+        }
+      }
+      return makeResult(true, "tool_call_audit", `All ${toolCalls.length} tool call(s) approved`);
+    }
+
+    // Run a simulated chain (short circuits on first fail like Python)
+    function simulateChain(guards, context) {
+      const results = [];
+      for (const g of guards) {
+        const t0 = performance.now();
+        const res = g.fn(context);
+        res.latency_ms = Math.round((performance.now() - t0) * 100 + Math.random() * 0.6);
+        results.push(res);
+        if (!res.passed) break;
+      }
+      return results;
+    }
+
+    function renderResults(results, containerId, summaryId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      container.classList.remove('hidden');
+
+      let totalLatency = 0;
+      let passed = 0;
+
+      results.forEach(r => {
+        totalLatency += r.latency_ms || 0;
+        if (r.passed) passed++;
+
+        const div = document.createElement('div');
+        div.className = `flex items-start gap-3 px-4 py-2.5 rounded-2xl border text-sm ${r.passed ? 'result-pass border-emerald-900/70' : 'result-fail border-red-900/70'}`;
+        
+        const icon = r.passed ? 
+          '<i class="fa-solid fa-check mt-0.5 text-emerald-400"></i>' : 
+          '<i class="fa-solid fa-times mt-0.5 text-red-400"></i>';
+
+        div.innerHTML = `
+          <div class="mt-0.5">${icon}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-xs tracking-wider">${r.guardrail_name}</div>
+              <div class="text-[10px] tabular-nums opacity-70">${r.latency_ms}ms</div>
+            </div>
+            <div class="text-xs mt-0.5 leading-snug opacity-90">${r.message}</div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      // summary
+      const sumEl = document.getElementById(summaryId);
+      if (sumEl) {
+        sumEl.classList.remove('hidden');
+        document.getElementById('demo-pass-count').innerHTML = `${passed}/${results.length}`;
+        document.getElementById('demo-total-latency').innerHTML = `${Math.round(totalLatency)}ms`;
+      }
+    }
+
+    function runDemoGuardrails() {
+      const input = document.getElementById('demo-input').value;
+      const output = document.getElementById('demo-output').value;
+      let toolsRaw = document.getElementById('demo-tools').value.trim();
+
+      let toolCalls = [];
+      try {
+        if (toolsRaw) toolCalls = JSON.parse(toolsRaw);
+      } catch (e) {
+        toolCalls = [];
+        // allow simple string for demo
+      }
+
+      // Build the three phases like the real library
+      const inputGuards = [
+        { name: 'input_length', fn: (c) => runInputLength(c.input_text) },
+        { name: 'blocked_topic', fn: (c) => runBlockedTopic(c.input_text, null) },
+        { name: 'cost_limit', fn: (c) => runCostLimit(c.input_text) },
+      ];
+
+      const outputGuards = [
+        { name: 'pii_detection', fn: (c) => runPiiDetection(null, c.output_text) },
+        { name: 'output_format', fn: (c) => runOutputFormat(c.output_text, 5000, [], ["as an AI", "I cannot help"]) },
+      ];
+
+      const toolGuards = [
+        { name: 'tool_call_audit', fn: (c) => runToolAudit(c.tool_calls, ["search_flights", "search_hotels", "get_weather"], [], 3) },
+      ];
+
+      // Run phases
+      const inputResults = simulateChain(inputGuards, { input_text: input });
+      let allResults = [...inputResults];
+
+      // If input passed, "simulate" the model call + tool guards + output
+      const inputPassed = inputResults.every(r => r.passed);
+      
+      let toolResults = [];
+      let outputResults = [];
+
+      if (inputPassed) {
+        if (toolCalls && toolCalls.length > 0) {
+          toolResults = simulateChain(toolGuards, { tool_calls: toolCalls });
+          allResults = allResults.concat(toolResults);
+        }
+        
+        // always run output in this demo (mirrors real flow when no early exit)
+        outputResults = simulateChain(outputGuards, { output_text: output });
+        allResults = allResults.concat(outputResults);
+      }
+
+      // If any cost limit passed we can "record" a fake usage for realism
+      const costPassed = inputResults.some(r => r.guardrail_name === 'cost_limit' && r.passed);
+      if (costPassed && input) {
+        const est = Math.floor(input.length / 4) + 80;
+        demoTokensUsed += est;
+      }
+
+      renderResults(allResults, 'demo-results', 'demo-summary');
+
+      // Also update a tiny log line
+      const blocked = allResults.some(r => !r.passed);
+      if (blocked) {
+        // visual hint already in the colored rows
+      }
+    }
+
+    function resetDemo() {
+      document.getElementById('demo-results').innerHTML = `
+        <div class="text-xs text-zinc-500 py-8 text-center border border-dashed border-white/10 rounded-2xl">
+          Results will appear here after running the demo
+        </div>`;
+      document.getElementById('demo-summary').classList.add('hidden');
+      demoTokensUsed = 0;
+    }
+
+    function loadPreset(preset) {
+      const inputEl = document.getElementById('demo-input');
+      const outputEl = document.getElementById('demo-output');
+      const toolsEl = document.getElementById('demo-tools');
+
+      if (preset === 'input-long') {
+        inputEl.value = 'x'.repeat(5200);
+        outputEl.value = 'Here is a short helpful reply.';
+        toolsEl.value = '[]';
+      } else if (preset === 'topic-block') {
+        inputEl.value = 'How do I exploit the system using weapons?';
+        outputEl.value = 'I can help you with travel planning.';
+        toolsEl.value = '[]';
+      } else if (preset === 'output-pii') {
+        inputEl.value = 'Plan a trip to Tokyo';
+        outputEl.value = 'Contact john@example.com or call our support at 555-123-9876.';
+        toolsEl.value = '[]';
+      } else if (preset === 'output-prohibited') {
+        inputEl.value = 'Help me plan a trip';
+        outputEl.value = 'As an AI, I cannot actually book the tickets for you.';
+        toolsEl.value = '[]';
+      } else if (preset === 'tool-ok') {
+        inputEl.value = 'Find me flights from NYC to Paris on 2026-06-12';
+        outputEl.value = '';
+        toolsEl.value = '[{"function":{"name":"search_flights","arguments":"{\\"origin\\":\\"NYC\\",\\"destination\\":\\"PAR\\",\\"date\\":\\"2026-06-12\\"}"}}]';
+      } else if (preset === 'tool-blocked') {
+        inputEl.value = 'Delete my account please';
+        outputEl.value = '';
+        toolsEl.value = '[{"function":{"name":"delete_account","arguments":"{\\"user\\":\\"me\\"}"}}]';
+      } else if (preset === 'cost-exhausted') {
+        demoTokensUsed = 12000; // trigger
+        inputEl.value = 'Plan a very long multi-city itinerary across Europe and Asia';
+        outputEl.value = 'Sure, here is a high-level plan.';
+        toolsEl.value = '[]';
+      }
+    }
+
+    function loadGuardIntoDemo(guard) {
+      const inputEl = document.getElementById('demo-input');
+      const outputEl = document.getElementById('demo-output');
+      const toolsEl = document.getElementById('demo-tools');
+
+      // default clean
+      inputEl.value = 'Plan a trip to Tokyo next month';
+      outputEl.value = 'Here are some great options for your trip.';
+      toolsEl.value = '[{"function":{"name":"search_flights","arguments":"{\\"origin\\":\\"SFO\\",\\"destination\\":\\"HND\\"}"}}]';
+
+      if (guard === 'input_length') {
+        inputEl.value = 'x'.repeat(4800);
+        loadPreset('input-long');
+      } else if (guard === 'blocked_topic') {
+        loadPreset('topic-block');
+      } else if (guard === 'pii') {
+        loadPreset('output-pii');
+      } else if (guard === 'output_format') {
+        loadPreset('output-prohibited');
+      } else if (guard === 'cost_limit') {
+        loadPreset('cost-exhausted');
+      } else if (guard === 'tool_audit') {
+        loadPreset('tool-blocked');
+      }
+
+      // auto-run after a tiny delay so user sees the change
+      setTimeout(() => {
+        runDemoGuardrails();
+        // scroll to results area
+        document.getElementById('demo-results').scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }, 120);
+    }
+
+    // Keyboard support: Cmd/Ctrl + Enter runs demo
+    function setupKeyboard() {
+      const area = document.getElementById('demo');
+      if (!area) return;
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          const active = document.activeElement;
+          if (active && (active.id === 'demo-input' || active.id === 'demo-output' || active.id === 'demo-tools')) {
+            e.preventDefault();
+            runDemoGuardrails();
+          }
+        }
+      });
+
+      // Also allow Enter in input to run (not in textarea)
+      const input = document.getElementById('demo-input');
+      if (input) {
+        input.addEventListener('keypress', function(ev) {
+          if (ev.key === 'Enter' && !ev.shiftKey) {
+            ev.preventDefault();
+            runDemoGuardrails();
+          }
+        });
+      }
+    }
+
+    function initDemo() {
+      // Seed with a nice default run so the page feels alive
+      setTimeout(() => {
+        const resultsContainer = document.getElementById('demo-results');
+        if (resultsContainer && resultsContainer.textContent.includes('Results will appear')) {
+          // run a clean default
+          document.getElementById('demo-input').value = 'Plan a trip to Paris for next weekend';
+          document.getElementById('demo-output').value = 'Here are your flight options for Paris.';
+          document.getElementById('demo-tools').value = '[]';
+          runDemoGuardrails();
+        }
+      }, 650);
+
+      setupKeyboard();
+    }
+
+    // Bootstrap everything
+    function init() {
+      initTailwind();
+      initDemo();
+
+      // Make sure first tab is active (in case)
+      const firstTab = document.getElementById('tab-0');
+      if (firstTab) firstTab.classList.add('border-b-2', 'border-[#76b900]', 'text-white');
+
+      // Bonus: clicking the hero image also scrolls to demo
+      const heroImg = document.querySelector('#demo img');
+      if (heroImg) {
+        heroImg.style.cursor = 'pointer';
+        heroImg.addEventListener('click', () => {
+          document.getElementById('demo').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+
+      // Accessibility: allow pressing "r" to reset demo when focused in area
+      document.addEventListener('keypress', (e) => {
+        if (e.key.toLowerCase() === 'r' && document.activeElement.tagName === 'BODY') {
+          const demoEl = document.getElementById('demo-results');
+          if (demoEl && demoEl.offsetParent !== null) resetDemo();
+        }
+      });
+
+      // Mark that the landing is ready
+      console.log('%c[nim-guardrails] Showcase landing initialized (static)', 'color:#444');
+    }
+
+    window.onload = init;
+
+    // Expose a few helpers for power users / console tinkering
+    window.NIMGuardrailsDemo = {
+      run: () => runDemoGuardrails(),
+      reset: () => resetDemo(),
+      load: (p) => loadPreset(p),
+      version: '0.2.0-landing'
+    };
+  </script>
+</body>
+</html>

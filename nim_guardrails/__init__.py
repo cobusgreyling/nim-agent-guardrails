@@ -14,7 +14,7 @@ from nim_guardrails.guardrails import (
 from nim_guardrails.client import NimClient, NimResponse
 from nim_guardrails.agent import GuardedAgent, AgentConfig, ToolDefinition
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Guardrail",

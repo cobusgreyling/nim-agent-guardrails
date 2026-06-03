@@ -1,1 +1,3 @@
+# Core guardrails have zero dependencies.
+# For NIM client + GuardedAgent: pip install -e ".[nim]"
 openai>=1.0
