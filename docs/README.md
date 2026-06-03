@@ -11,10 +11,8 @@ This directory contains the official showcase landing page for **nim-agent-guard
 
 ## Viewing
 
-**Easiest (recommended):**
-Open the live version using GitHub's html preview service:
-
-https://htmlpreview.github.io/?https://raw.githubusercontent.com/cobusgreyling/nim-agent-guardrails/main/docs/index.html
+**Live (recommended):**
+https://cobusgreyling.github.io/nim-agent-guardrails/
 
 **Locally:**
 ```bash
@@ -27,16 +25,7 @@ python3 -m http.server 8080 --directory .
 
 The page gracefully falls back to raw GitHub image URLs if local assets are missing.
 
-## Enabling GitHub Pages (optional)
-
-1. Go to repo → **Settings** → **Pages**
-2. Source: **Deploy from a branch**
-3. Branch: `main` / `docs` folder
-4. Save
-
-Your landing page will then be available at:
-
-`https://cobusgreyling.github.io/nim-agent-guardrails/`
+GitHub Pages is configured to serve from the `docs/` folder on `main`.
 
 ## Notes
 

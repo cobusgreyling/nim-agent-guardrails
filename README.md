@@ -11,7 +11,7 @@ Composable guardrails that wrap every NIM API call — input validation, output 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![NVIDIA NIM](https://img.shields.io/badge/NVIDIA-NIM-76B900.svg)](https://build.nvidia.com)
 
-**🌐 [View the interactive showcase landing page](https://htmlpreview.github.io/?https://raw.githubusercontent.com/cobusgreyling/nim-agent-guardrails/main/docs/index.html)** (no install required)
+**🌐 [View the interactive showcase landing page](https://cobusgreyling.github.io/nim-agent-guardrails/)** (no install required)
 
 
 ![nim-agent-guardrails](2026-05-11_12-28-45.jpg)
